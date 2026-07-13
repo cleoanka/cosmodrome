@@ -16,8 +16,6 @@ brings it back, rebuilt natively in Swift.
 > **finger-tracking pager**, and atomic **layout persistence**. See the
 > [changelog](CHANGELOG.md).
 
-![Cosmodrome demo](docs/demo.gif)
-
 ## What it does
 
 - **The grid you remember** — a paged 7×5 full-screen grid of every app on your Mac,
@@ -46,13 +44,6 @@ brings it back, rebuilt natively in Swift.
   deduplicated by bundle ID; new installs appear at the end, uninstalls vanish.
 - **Quiet resident** — a menu-bar item and ~30 MB of memory. Optional start at
   login. No network, no analytics, no nonsense.
-
-| Grid | Search |
-| --- | --- |
-| ![Grid](docs/screenshot-grid.png) | ![Search](docs/screenshot-search.png) |
-
-> The demo and screenshots above are from 0.1.0; the 0.2.0 drag/folder/pager
-> features are not yet captured. Fresh media is on the way.
 
 ## Install
 
