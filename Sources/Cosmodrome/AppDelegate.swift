@@ -21,10 +21,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onOpen: { [weak self] in self?.overlay.show() },
             onRefresh: { [weak self] in self?.state.refreshApps() },
             onSettings: { [weak self] in self?.showSettings() },
-            onQuit: { NSApp.terminate(nil) }
+            onQuit: { NSApp.terminate(nil) },
+            onArrangeAlphabetical: { [weak self] in self?.state.arrangeAlphabetically() },
+            onArrangeByCategory: { [weak self] in self?.state.arrangeByCategory() }
         )
 
-        state.scanNow()
+        // Demo/testing modes mutate the layout; keep them off the user's disk.
+        if CommandLine.arguments.contains("--demo") || CommandLine.arguments.contains("--ephemeral") {
+            state.persistenceEnabled = false
+        }
+        state.bootstrap()
         if let screen = NSScreen.main {
             WallpaperProvider.prepare(for: screen)
         }
@@ -59,6 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleLaunchArguments() {
         let args = CommandLine.arguments
+        if args.contains("--arranged") {
+            state.arrangeByCategory()
+        }
         let background = args.contains("--background") || Self.launchedAsLoginItem()
         if !background {
             overlay.show()
@@ -85,27 +94,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             && event.paramDescriptor(forKeyword: keyAEPropDataCode)?.enumCodeValue == launchedAsLogInItemCode
     }
 
-    /// Self-driving tour used to record the README gif — no synthetic input
-    /// events, no Accessibility permission, just state changes.
+    /// Self-driving tour — real state changes, no synthetic input events.
+    /// (The README gif is recorded with genuine system input instead.)
     private func runDemo() {
         Task { @MainActor [state, overlay] in
             func pause(_ seconds: Double) async {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             }
+            await pause(1.4)
+            state.arrangeByCategory()
             await pause(1.6)
+            if let folder = state.layout.nodes.compactMap(\.folder).first {
+                state.openFolder(folder.id)
+                await pause(1.8)
+                state.closeFolder()
+                await pause(0.8)
+            }
             state.flipPage(1)
-            await pause(1.3)
-            state.flipPage(1)
-            await pause(1.3)
+            await pause(1.2)
             state.goToPage(0)
-            await pause(1.0)
+            await pause(0.9)
             for ch in "ca" {
                 state.appendToQuery(String(ch))
                 await pause(0.35)
             }
-            await pause(1.8)
+            await pause(1.6)
             state.setQuery("")
-            await pause(1.2)
+            await pause(1.0)
             overlay.hide(restoreFocus: false)
         }
     }

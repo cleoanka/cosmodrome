@@ -1,21 +1,43 @@
 import SwiftUI
 
-/// Clickable page indicator dots, hidden while a single page fits everything.
+/// Clickable page dots with a live active indicator: the bright dot glides
+/// between positions, tracking the fingers mid-swipe.
 struct PageDotsView: View {
     @ObservedObject var state: GridState
+    @ObservedObject var drive: PagerDrive
+
+    private let dotSize: CGFloat = 6
+    private let spacing: CGFloat = 10
 
     var body: some View {
-        HStack(spacing: 10) {
-            if state.pageCount > 1 {
-                ForEach(0..<state.pageCount, id: \.self) { page in
-                    DotView(isActive: page == state.currentPage) {
-                        state.goToPage(page)
+        let count = state.pageCount
+        ZStack {
+            HStack(spacing: spacing) {
+                if count > 1 {
+                    ForEach(0..<count, id: \.self) { page in
+                        DotView(isActive: false) {
+                            state.goToPage(page)
+                        }
                     }
                 }
             }
+            if count > 1 {
+                Circle()
+                    .fill(.white.opacity(0.95))
+                    .frame(width: dotSize, height: dotSize)
+                    .offset(x: activeOffset(count: count))
+                    .allowsHitTesting(false)
+            }
         }
         .frame(height: 16)
-        .animation(.easeOut(duration: 0.2), value: state.currentPage)
+    }
+
+    private func activeOffset(count: Int) -> CGFloat {
+        let width = max(drive.pageWidth, 1)
+        let raw = CGFloat(state.currentPage) - drive.liveOffset / width
+        let progress = min(max(raw, 0), CGFloat(count - 1))
+        let step = dotSize + spacing
+        return (progress - CGFloat(count - 1) / 2) * step
     }
 }
 

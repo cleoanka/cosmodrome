@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Full-screen root: blurred wallpaper behind, search + paged grid + dots in
-/// front. The phase drives Launchpad's signature zoom-and-materialize.
+/// Full-screen root: blurred wallpaper behind; search, paged grid and dots in
+/// front; folder panel and drag ghost on top. The phase drives Launchpad's
+/// signature zoom-and-materialize.
 struct OverlayRootView: View {
     @ObservedObject var state: GridState
 
@@ -11,13 +12,24 @@ struct OverlayRootView: View {
                 BackgroundView(wallpaper: state.wallpaper, dim: state.dimAmount)
                     .opacity(state.phase == .shown ? 1 : 0)
                     .contentShape(Rectangle())
-                    .onTapGesture { state.requestHide() }
+                    .onTapGesture {
+                        if state.openFolderID != nil { state.closeFolder() } else { state.requestHide() }
+                    }
 
-                content(in: geo.size)
-                    .scaleEffect(contentScale)
-                    .blur(radius: contentBlur)
-                    .opacity(state.phase == .shown ? 1 : 0)
+                ZStack {
+                    content(in: geo.size)
+                        .blur(radius: state.openFolderID != nil ? 14 : 0)
+                        .scaleEffect(state.openFolderID != nil ? 0.98 : 1)
+
+                    FolderLayer(state: state, drag: state.drag)
+
+                    DragGhostView(state: state, drag: state.drag)
+                }
+                .scaleEffect(contentScale)
+                .blur(radius: contentBlur)
+                .opacity(state.phase == .shown ? 1 : 0)
             }
+            .coordinateSpace(name: "overlay")
         }
         .ignoresSafeArea()
     }
@@ -46,11 +58,11 @@ struct OverlayRootView: View {
                 Spacer()
                 Spacer()
             } else {
-                PagerView(state: state)
+                PagerView(state: state, drive: state.pagerDrive, drag: state.drag)
                     .padding(.top, 12)
             }
 
-            PageDotsView(state: state)
+            PageDotsView(state: state, drive: state.pagerDrive)
                 .padding(.top, 12)
                 .padding(.bottom, 40)
         }

@@ -9,6 +9,8 @@ final class StatusItemController: NSObject {
     private let onRefresh: () -> Void
     private let onSettings: () -> Void
     private let onQuit: () -> Void
+    private let onArrangeAlphabetical: () -> Void
+    private let onArrangeByCategory: () -> Void
     private var openMenuItem: NSMenuItem?
 
     init(
@@ -16,7 +18,9 @@ final class StatusItemController: NSObject {
         onOpen: @escaping () -> Void,
         onRefresh: @escaping () -> Void,
         onSettings: @escaping () -> Void,
-        onQuit: @escaping () -> Void
+        onQuit: @escaping () -> Void,
+        onArrangeAlphabetical: @escaping () -> Void,
+        onArrangeByCategory: @escaping () -> Void
     ) {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         self.hotkey = hotkey
@@ -24,6 +28,8 @@ final class StatusItemController: NSObject {
         self.onRefresh = onRefresh
         self.onSettings = onSettings
         self.onQuit = onQuit
+        self.onArrangeAlphabetical = onArrangeAlphabetical
+        self.onArrangeByCategory = onArrangeByCategory
         super.init()
 
         if let button = statusItem.button {
@@ -49,6 +55,17 @@ final class StatusItemController: NSObject {
         let refresh = NSMenuItem(title: "Refresh Apps", action: #selector(refreshApps), keyEquivalent: "")
         refresh.target = self
         menu.addItem(refresh)
+
+        let arrange = NSMenuItem(title: "Arrange", action: nil, keyEquivalent: "")
+        let arrangeMenu = NSMenu()
+        let alphabetical = NSMenuItem(title: "Sort Alphabetically", action: #selector(arrangeAlphabetical), keyEquivalent: "")
+        alphabetical.target = self
+        arrangeMenu.addItem(alphabetical)
+        let byCategory = NSMenuItem(title: "Group by Category", action: #selector(arrangeByCategory), keyEquivalent: "")
+        byCategory.target = self
+        arrangeMenu.addItem(byCategory)
+        arrange.submenu = arrangeMenu
+        menu.addItem(arrange)
 
         let settings = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
@@ -77,6 +94,8 @@ final class StatusItemController: NSObject {
     @objc private func refreshApps() { onRefresh() }
     @objc private func openSettings() { onSettings() }
     @objc private func quit() { onQuit() }
+    @objc private func arrangeAlphabetical() { onArrangeAlphabetical() }
+    @objc private func arrangeByCategory() { onArrangeByCategory() }
 
     @objc private func openGitHub() {
         if let url = URL(string: "https://github.com/cleoanka/cosmodrome") {

@@ -12,18 +12,28 @@ brings it back, rebuilt natively in Swift.
 
 - **The grid you remember** — a paged 7×5 full-screen grid of every app on your Mac,
   over your own wallpaper, blurred and dimmed exactly like Launchpad did it.
+- **Your order, your folders** — drag icons to rearrange (a live gap opens where
+  they'll land), drop one app onto another to fuse a folder, drop onto a folder
+  to file it away, drag out to free it. Folders open in a glass panel with
+  paging, click-to-rename, and category-suggested names. Everything persists.
+- **Auto folders** — one menu action groups the whole grid by App Store category
+  (Developer Tools, Games, Music…), iOS App Library style. One action flattens
+  it back to A–Z.
+- **Pages that follow your fingers** — trackpad and mouse drags track 1:1 with
+  rubber-band physics and a flick-aware spring snap; pages recede in depth as
+  they slide; the active page dot glides along live. Icon drags near the screen
+  edge flip pages for you.
 - **Summon from anywhere** — a global hotkey (default **⌥ Space**, recordable to
   anything) pops the grid over any app, even full-screen ones. No Accessibility
   permission needed.
-- **Type to search** — no field to click; just start typing. Ranked live results,
-  best match pre-selected, **Return** launches it.
-- **Made for hands** — trackpad swipes and mouse drags flip pages with rubber-band
-  physics; arrow keys walk the grid across page boundaries; clickable page dots.
+- **Type to search** — no field to click; just start typing. Ranked live results
+  (folders are searched through, too), best match pre-selected, **Return**
+  launches it.
 - **Launchpad's soul** — the zoom-and-materialize entrance, the dive-in launch
   animation, press-to-dim icons, the translucent search pill.
 - **Everything indexed** — `/Applications` (with subfolders), `~/Applications`,
   `/System/Applications`, and Safari's cryptex; symlinked apps included;
-  deduplicated by bundle ID; alphabetical, always tidy.
+  deduplicated by bundle ID; new installs appear at the end, uninstalls vanish.
 - **Quiet resident** — a menu-bar item and ~30 MB of memory. Optional start at
   login. No network, no analytics, no nonsense.
 
@@ -55,14 +65,23 @@ Or build it yourself — see below. Requires macOS 14+.
 | --- | --- |
 | ⌥ Space | Open / close (configurable) |
 | any letter | Search |
-| ← → ↑ ↓ | Walk the grid (crosses pages) |
-| Return | Launch selection / best match |
-| Esc | Clear search, then close |
+| ← → ↑ ↓ | Walk the grid (crosses pages, works inside folders) |
+| Return | Launch selection / best match; opens a selected folder |
+| Esc | Cancel drag → close folder → clear search → close |
 | Page Up / Down, Home / End | Flip pages |
-| two-finger swipe / scroll | Flip pages |
+| two-finger swipe / scroll | Pages follow your fingers |
 
-Click an empty spot (or any other window) to dismiss. Right-click an icon for
-**Show in Finder**.
+| Mouse | Action |
+| --- | --- |
+| drag an icon | Rearrange (hold at a screen edge to change page) |
+| drop app on app | New folder (named after its category) |
+| drop app on folder | Add to folder |
+| drag out of an open folder | Remove from folder |
+| click a folder's name | Rename |
+| right-click | Open · Show in Finder · Rename · Ungroup · Remove from Folder |
+
+Click an empty spot (or any other window) to dismiss. The **Arrange** menu in
+the menu bar offers *Sort Alphabetically* and *Group by Category*.
 
 ## Build from source
 
@@ -83,16 +102,24 @@ A borderless, non-activating `NSPanel` one level above the menu bar — the
 Spotlight trick — so the grid takes the keyboard without stealing app activation
 and gives focus straight back when it closes. All input flows through local
 event monitors into an observable `GridState`; there is no focusable text field
-to lose focus. The wallpaper is read once per screen, Gaussian-blurred and
-saturation-boosted with Core Image, then cached. The global hotkey is a Carbon
-`RegisterEventHotKey` — still the only permissionless way. Pure logic
-(scanning, ranking, grid geometry) lives in `CosmodromeCore`, fully unit-tested.
+to lose focus (even folder renaming is routed keystrokes). The wallpaper is
+read once per screen, Gaussian-blurred and saturation-boosted with Core Image
+off the main thread, then cached.
+
+Drag & drop is custom-built: a pure hit-testing module (`DropMath`) maps the
+cursor to insert/combine/into-folder proposals, a coordinator animates the gap
+through the grid, and every layout mutation funnels through one tested engine
+(`LayoutEngine`) that owns the invariants — folders never nest, never hold one
+app, and an app never appears twice. Your arrangement lives in
+`~/Library/Application Support/Cosmodrome/layout.json`; auto folders come from
+each app's `LSApplicationCategoryType`. Pure logic (scanning, ranking, grid
+geometry, layout, drop math) lives in `CosmodromeCore`, fully unit-tested.
 
 ## Roadmap
 
-- Drag-to-reorder and folders (the full Launchpad experience)
 - Per-app hide list
 - Multi-display polish
+- Custom folder icons
 
 ## License
 

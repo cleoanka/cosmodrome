@@ -49,11 +49,18 @@ public enum AppScanner {
                 guard fm.fileExists(atPath: resolved.path, isDirectory: &isDirectory),
                       isDirectory.boolValue else { continue }
 
-                let bundleID = Bundle(url: resolved)?.bundleIdentifier
+                let bundle = Bundle(url: resolved)
+                let bundleID = bundle?.bundleIdentifier
                 if let bundleID, excluded.contains(bundleID) { continue }
+                let category = bundle?.infoDictionary?["LSApplicationCategoryType"] as? String
 
                 let dedupeKey = bundleID ?? url.lastPathComponent.lowercased()
-                let item = AppItem(url: url, name: fm.displayName(atPath: url.path), bundleID: bundleID)
+                let item = AppItem(
+                    url: url,
+                    name: fm.displayName(atPath: url.path),
+                    bundleID: bundleID,
+                    category: category
+                )
 
                 if let previous = best[dedupeKey] {
                     if previous.root == rootIndex && level < previous.level {

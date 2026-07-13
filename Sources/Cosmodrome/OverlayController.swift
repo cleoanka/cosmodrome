@@ -22,9 +22,9 @@ final class OverlayController: NSObject {
     private(set) var isVisible = false
     private var isTransitioning = false
 
-    // Trackpad swipe: one page per gesture, like Launchpad.
-    private var swipeAccumulator: CGFloat = 0
-    private var swipeConsumed = false
+    // Trackpad swipe inside an open folder: one page per gesture.
+    private var folderSwipeAccumulator: CGFloat = 0
+    private var folderSwipeConsumed = false
     // Classic mouse wheels have no gesture phases; rate-limit instead.
     private var wheelAccumulator: CGFloat = 0
     private var wheelCooldownUntil: CFAbsoluteTime = 0
@@ -77,6 +77,7 @@ final class OverlayController: NSObject {
     func hide(restoreFocus: Bool = true) {
         guard isVisible, !isTransitioning else { return }
         isTransitioning = true
+        state.drag.cancel()
         removeMonitors()
         withAnimation(Anim.disappear) { state.phase = .hidden }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) { [weak self] in
@@ -88,6 +89,7 @@ final class OverlayController: NSObject {
     /// no animation — they have already moved on.
     func hideBecauseDeactivated() {
         guard isVisible, !isTransitioning else { return }
+        state.drag.cancel()
         removeMonitors()
         state.phase = .hidden
         window?.orderOut(nil)
@@ -185,12 +187,70 @@ final class OverlayController: NSObject {
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
+        // A drag in flight: Escape cancels it, everything else is inert.
+        if state.drag.isActive {
+            if event.keyCode == 53 { state.drag.cancel() }
+            return true
+        }
+
+        // Folder rename captures the keyboard (headless — no focusable field).
+        if state.renamingFolder {
+            switch event.keyCode {
+            case 53: state.cancelRename(); return true
+            case 36, 76, 48: state.commitRename(); return true
+            case 51: state.renameBackspace(); return true
+            default: break
+            }
+            if flags.contains(.command) || flags.contains(.control) { return true }
+            if let text = printableText(from: event) { state.renameAppend(text) }
+            return true
+        }
+
+        // An open folder gets its own navigation layer.
+        if state.openFolderID != nil {
+            switch event.keyCode {
+            case 53: state.closeFolder(); return true
+            case 36, 76:
+                if let item = state.selectedFolderApp { launch(item) }
+                return true
+            case 123: state.moveFolderSelection(.left); return true
+            case 124: state.moveFolderSelection(.right); return true
+            case 125: state.moveFolderSelection(.down); return true
+            case 126: state.moveFolderSelection(.up); return true
+            case 48:
+                state.moveFolderSelection(flags.contains(.shift) ? .left : .right)
+                return true
+            case 116: state.folderFlip(-1); return true
+            case 121: state.folderFlip(1); return true
+            case 51: return true
+            default: break
+            }
+            if flags.contains(.command) || flags.contains(.control) { return true }
+            if let text = printableText(from: event) {
+                // Typing anywhere searches globally, so the folder gives way.
+                state.closeFolder()
+                state.appendToQuery(text)
+            }
+            return true
+        }
+
         switch event.keyCode {
         case 53: // Escape: clear the search first, then dismiss.
             if state.query.isEmpty { hide() } else { state.setQuery("") }
             return true
         case 36, 76: // Return / keypad Enter
-            if let item = state.itemToLaunch() { launch(item) }
+            if !state.query.isEmpty {
+                if let item = state.searchItemToLaunch() { launch(item) }
+                return true
+            }
+            switch state.selectedNode {
+            case .app(let appID):
+                if let item = state.appsByID[appID] { launch(item) }
+            case .folder(let folder):
+                state.openFolder(folder.id)
+            case nil:
+                break
+            }
             return true
         case 123: state.moveSelection(.left); return true
         case 124: state.moveSelection(.right); return true
@@ -222,15 +282,19 @@ final class OverlayController: NSObject {
         }
         if flags.contains(.control) { return true }
 
-        guard let chars = event.characters, !chars.isEmpty else { return true }
+        if let text = printableText(from: event) {
+            state.appendToQuery(text)
+        }
+        return true
+    }
+
+    private func printableText(from event: NSEvent) -> String? {
+        guard let chars = event.characters, !chars.isEmpty else { return nil }
         let printable = String(chars.unicodeScalars.filter { scalar in
             !(0xF700...0xF8FF).contains(Int(scalar.value))
                 && !CharacterSet.controlCharacters.contains(scalar)
         })
-        if !printable.isEmpty {
-            state.appendToQuery(printable)
-        }
-        return true
+        return printable.isEmpty ? nil : printable
     }
 
     private func handleScroll(_ event: NSEvent) {
@@ -238,6 +302,12 @@ final class OverlayController: NSObject {
         let dx = event.scrollingDeltaX
         let dy = event.scrollingDeltaY
         let delta = abs(dx) >= abs(dy) ? dx : dy
+
+        // An open folder pages discretely.
+        if state.openFolderID != nil {
+            handleFolderScroll(event, delta: delta)
+            return
+        }
 
         if event.phase.isEmpty {
             // Classic wheel ticks.
@@ -252,15 +322,43 @@ final class OverlayController: NSObject {
             return
         }
 
-        if event.phase == .began {
-            swipeAccumulator = 0
-            swipeConsumed = false
+        // Trackpad gesture: the pager tracks the fingers 1:1 and snaps with
+        // a flick-aware spring on release — the v0.2 interactive feel.
+        let drive = state.pagerDrive
+        switch event.phase {
+        case .began:
+            drive.gestureActive = true
+            drive.liveOffset = 0
+            drive.lastDelta = 0
+            fallthrough
+        case .changed:
+            drive.liveOffset += delta
+            drive.lastDelta = delta
+        case .ended, .cancelled:
+            if drive.gestureActive { state.settlePager() }
+        default:
+            break
         }
-        guard !swipeConsumed else { return }
-        swipeAccumulator += delta
-        if abs(swipeAccumulator) > 60 {
-            swipeConsumed = true
-            state.flipPage(swipeAccumulator > 0 ? -1 : 1)
+    }
+
+    private func handleFolderScroll(_ event: NSEvent, delta: CGFloat) {
+        if event.phase == .began {
+            folderSwipeAccumulator = 0
+            folderSwipeConsumed = false
+        }
+        if event.phase.isEmpty {
+            folderSwipeAccumulator += delta
+            if abs(folderSwipeAccumulator) > 40 {
+                state.folderFlip(folderSwipeAccumulator > 0 ? -1 : 1)
+                folderSwipeAccumulator = 0
+            }
+            return
+        }
+        guard !folderSwipeConsumed else { return }
+        folderSwipeAccumulator += delta
+        if abs(folderSwipeAccumulator) > 50 {
+            folderSwipeConsumed = true
+            state.folderFlip(folderSwipeAccumulator > 0 ? -1 : 1)
         }
     }
 }
