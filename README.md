@@ -2,9 +2,19 @@
 
 **The full-screen app grid macOS lost.**
 
+[![CI](https://github.com/cleoanka/cosmodrome/actions/workflows/ci.yml/badge.svg)](https://github.com/cleoanka/cosmodrome/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/cleoanka/cosmodrome?sort=semver)](https://github.com/cleoanka/cosmodrome/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)](#install)
+
 macOS Tahoe removed Launchpad and replaced it with a Spotlight list. If you loved
 the old way — every app on a wallpaper-blurred canvas, a keystroke away — Cosmodrome
 brings it back, rebuilt natively in Swift.
+
+> **What's new in 0.2.0** — the grid is now editable: drag to rearrange, drop app
+> onto app to make **folders**, one-action **auto-grouping** by category, a
+> **finger-tracking pager**, and atomic **layout persistence**. See the
+> [changelog](CHANGELOG.md).
 
 ![Cosmodrome demo](docs/demo.gif)
 
@@ -40,6 +50,9 @@ brings it back, rebuilt natively in Swift.
 | Grid | Search |
 | --- | --- |
 | ![Grid](docs/screenshot-grid.png) | ![Search](docs/screenshot-search.png) |
+
+> The demo and screenshots above are from 0.1.0; the 0.2.0 drag/folder/pager
+> features are not yet captured. Fresh media is on the way.
 
 ## Install
 
@@ -121,6 +134,12 @@ geometry, layout, drop math) lives in `CosmodromeCore`, fully unit-tested.
 - Multi-display polish
 - Custom folder icons
 
+## Contributing
+
+Bug reports and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+build/test workflow and architecture notes. Release history lives in
+[CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © 2026 cleoanka
