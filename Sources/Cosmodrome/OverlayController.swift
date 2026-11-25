@@ -77,6 +77,8 @@ final class OverlayController: NSObject {
     func hide(restoreFocus: Bool = true) {
         guard isVisible, !isTransitioning else { return }
         isTransitioning = true
+        // The next show resets renaming state; keep what was typed.
+        if state.renamingFolder { state.commitRename() }
         state.drag.cancel()
         removeMonitors()
         withAnimation(Anim.disappear) { state.phase = .hidden }
@@ -89,6 +91,7 @@ final class OverlayController: NSObject {
     /// no animation — they have already moved on.
     func hideBecauseDeactivated() {
         guard isVisible, !isTransitioning else { return }
+        if state.renamingFolder { state.commitRename() }
         state.drag.cancel()
         removeMonitors()
         state.phase = .hidden
