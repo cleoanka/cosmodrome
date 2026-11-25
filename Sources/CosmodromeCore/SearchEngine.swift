@@ -51,8 +51,12 @@ public enum SearchEngine {
         return true
     }
 
+    /// Dotless "ı" (U+0131) has no decomposition, so no folding option maps
+    /// it; fold it to "i" by hand so I/İ/ı/i all meet at "i" in both query
+    /// and name ("hizli" finds "Hızlı Not", "ıına" finds "IINA").
     private static func fold(_ s: String, locale: Locale) -> String {
         s.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: locale)
+            .replacingOccurrences(of: "\u{0131}", with: "i")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

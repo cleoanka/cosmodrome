@@ -62,6 +62,18 @@ final class SearchEngineTests: XCTestCase {
         XCTAssertEqual(names(SearchEngine.filter(apps, query: "IINA")), ["IINA"])
     }
 
+    func testDotlessIFoldsBothWays() {
+        // ı has no decomposition, so it must be folded explicitly — in the
+        // name ("Hızlı Not" via "hizli") and in the query ("ıına" → IINA).
+        let apps = items(["Hızlı Not", "IINA", "Safari"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "hizli")), ["Hızlı Not"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "HIZLI")), ["Hızlı Not"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "hızlı")), ["Hızlı Not"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "ıına")), ["IINA"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "İina")), ["IINA"])
+        XCTAssertEqual(names(SearchEngine.filter(apps, query: "ıına", locale: locale)), ["IINA"])
+    }
+
     func testTopHitIsStableForEqualScores() {
         // Alphabetical input order must survive equal scores (Return opens [0]).
         let apps = items(["Calculator", "Calendar"])
