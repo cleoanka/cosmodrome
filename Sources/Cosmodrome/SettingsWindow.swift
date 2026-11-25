@@ -157,7 +157,7 @@ struct ShortcutRecorderView: View {
             if flags.contains(.option) { carbon |= CarbonModifiers.option }
             if flags.contains(.control) { carbon |= CarbonModifiers.control }
 
-            let isFunctionKey = (96...122).contains(Int(event.keyCode))
+            let isFunctionKey = KeyNames.functionKeyCodes.contains(UInt32(event.keyCode))
             guard carbon != 0 || isFunctionKey else {
                 NSSound.beep() // bare letter keys would swallow all typing, system-wide
                 return nil

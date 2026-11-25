@@ -37,6 +37,13 @@ public enum KeyNames {
         106: "F16", 64: "F17", 79: "F18", 80: "F19",
     ]
 
+    /// F1–F19: the only keys a shortcut may use without a modifier. Spelled
+    /// out because the keycode range they share also holds Home, End, Page
+    /// Up/Down, Help and Forward Delete, which must stay usable for typing.
+    public static let functionKeyCodes: Set<UInt32> = [
+        122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80,
+    ]
+
     public static func keyName(for keyCode: UInt32) -> String {
         names[keyCode] ?? "Key \(keyCode)"
     }
