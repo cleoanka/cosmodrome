@@ -362,7 +362,17 @@ final class GridState: ObservableObject {
     func bootstrap() {
         let apps = AppScanner.scan(excludingBundleIDs: [Self.ownBundleID])
         allApps = apps
-        let stored = persistenceEnabled ? LayoutStore.load() : nil
+        var stored: AppLayout?
+        if persistenceEnabled {
+            do {
+                stored = try LayoutStore.load()
+            } catch {
+                // The user's file is unreadable and couldn't be preserved:
+                // run on a fresh layout this session but never overwrite it.
+                NSLog("Cosmodrome: layout unreadable, not saving this session: %@", error.localizedDescription)
+                persistenceEnabled = false
+            }
+        }
         let reconciled = LayoutEngine.reconcile(stored ?? LayoutEngine.initialLayout(from: apps), with: apps)
         layout = reconciled
         if persistenceEnabled, stored != reconciled { LayoutStore.save(reconciled) }

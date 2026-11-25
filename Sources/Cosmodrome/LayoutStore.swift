@@ -11,9 +11,18 @@ enum LayoutStore {
             .appendingPathComponent("layout.json")
     }
 
-    static func load() -> AppLayout? {
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return try? JSONDecoder().decode(AppLayout.self, from: data)
+    /// nil = nothing usable on disk (a fresh layout may be saved). Throws when
+    /// an unreadable file could not be moved aside: don't save over it.
+    static func load() throws -> AppLayout? {
+        switch try LayoutFile.load(from: fileURL) {
+        case .missing:
+            return nil
+        case .loaded(let layout):
+            return layout
+        case .movedAside(let backup):
+            NSLog("Cosmodrome: unreadable layout moved aside to %@", backup.lastPathComponent)
+            return nil
+        }
     }
 
     static func save(_ layout: AppLayout) {
