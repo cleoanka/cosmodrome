@@ -131,6 +131,15 @@ public enum LayoutEngine {
         return layout
     }
 
+    /// Commit a drag that lands on a folder. Dropping an app back onto the
+    /// folder it came from is a snap back: removing it first would dissolve
+    /// a 2-app folder, leaving `adding` no folder to put the app into.
+    public static func droppingIntoFolder(appID: String, from source: DragSource, folder folderID: UUID, in layout: AppLayout) -> AppLayout {
+        guard source != .folder(folderID) else { return layout }
+        let removed = removing(.app(appID), source: source, from: layout)
+        return adding(appID: appID, toFolder: folderID, in: removed)
+    }
+
     /// Reorder inside a folder; `to` indexes the folder as it stands after
     /// removing the moved app.
     public static func reorderingInFolder(_ folderID: UUID, appID: String, to: Int, in layout: AppLayout) -> AppLayout {

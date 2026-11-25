@@ -100,6 +100,33 @@ final class LayoutEngineTests: XCTestCase {
         XCTAssertEqual(layout.nodes[0].folder?.appIDs, [id("A"), id("B"), id("C")])
     }
 
+    func testDropIntoFolderFromGrid() {
+        let folder = AppFolder(name: "F", appIDs: [id("A"), id("B")])
+        var layout = AppLayout(nodes: [.app(id("C")), .folder(folder)])
+        layout = LayoutEngine.droppingIntoFolder(appID: id("C"), from: .grid, folder: folder.id, in: layout)
+        XCTAssertEqual(layout.nodes.count, 1)
+        XCTAssertEqual(layout.nodes[0].folder?.appIDs, [id("A"), id("B"), id("C")])
+    }
+
+    func testDropBackOntoOwnPairFolderKeepsApp() {
+        // Dragged out of a 2-app folder and dropped on that folder's grid
+        // cell: removing first used to dissolve the folder and lose the app.
+        let folder = AppFolder(name: "F", appIDs: [id("A"), id("B")])
+        let layout = AppLayout(nodes: [.app(id("X")), .folder(folder)])
+        let result = LayoutEngine.droppingIntoFolder(appID: id("A"), from: .folder(folder.id), folder: folder.id, in: layout)
+        XCTAssertEqual(result, layout)
+        XCTAssertTrue(result.allAppIDs.contains(id("A")))
+    }
+
+    func testDropIntoFolderFromAnotherFolder() {
+        let source = AppFolder(name: "S", appIDs: [id("A"), id("B")])
+        let target = AppFolder(name: "T", appIDs: [id("C"), id("D")])
+        var layout = AppLayout(nodes: [.folder(source), .folder(target)])
+        layout = LayoutEngine.droppingIntoFolder(appID: id("A"), from: .folder(source.id), folder: target.id, in: layout)
+        XCTAssertEqual(layout.nodes[0].appID, id("B")) // source pair dissolved in place
+        XCTAssertEqual(layout.nodes[1].folder?.appIDs, [id("C"), id("D"), id("A")])
+    }
+
     func testReorderInFolder() {
         let folder = AppFolder(name: "F", appIDs: [id("A"), id("B"), id("C")])
         var layout = AppLayout(nodes: [.folder(folder)])

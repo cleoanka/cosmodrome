@@ -118,8 +118,7 @@ final class DragCoordinator: ObservableObject {
             }
         case .intoFolder(let folderID):
             if let appID = session.node.appID {
-                layout = LayoutEngine.removing(session.node, source: session.source, from: layout)
-                layout = LayoutEngine.adding(appID: appID, toFolder: folderID, in: layout)
+                layout = LayoutEngine.droppingIntoFolder(appID: appID, from: session.source, folder: folderID, in: layout)
             }
         case .insertFolder, nil:
             break // snap back, nothing changes
