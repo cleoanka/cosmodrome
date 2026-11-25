@@ -78,7 +78,6 @@ final class DragCoordinator: ObservableObject {
         state.selection = nil
         state.folderSelection = nil
         ghost.location = point
-        NSLog("COSMO-DRAG begin node=%@", node.id)
         withAnimation(Anim.reflow) {
             session = Session(node: node, source: source, iconSize: iconSize)
         }
@@ -96,7 +95,6 @@ final class DragCoordinator: ObservableObject {
         guard let session else { return }
         cancelEdgeFlip()
         let landing = proposal
-        NSLog("COSMO-DRAG end proposal=%@", String(describing: landing))
 
         var layout = state.layout
         switch landing {
