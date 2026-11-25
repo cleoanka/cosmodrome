@@ -21,7 +21,13 @@ final class SettingsModel: ObservableObject {
     }
 
     func setShortcut(keyCode: UInt32, carbonModifiers: UInt32) {
-        hotkey.update(keyCode: keyCode, modifiers: carbonModifiers)
+        guard hotkey.update(keyCode: keyCode, modifiers: carbonModifiers) else {
+            NSSound.beep()
+            let attempted = KeyNames.displayString(keyCode: keyCode, carbonModifiers: carbonModifiers)
+            statusMessage = "Couldn't register \(attempted); kept \(hotkey.displayString)."
+            return
+        }
+        statusMessage = nil
         shortcutDisplay = hotkey.displayString
         onShortcutChanged()
     }

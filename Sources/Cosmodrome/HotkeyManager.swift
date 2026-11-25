@@ -28,13 +28,24 @@ final class HotkeyManager {
         register()
     }
 
-    func update(keyCode: UInt32, modifiers: UInt32) {
+    /// Switch to a new shortcut. If it can't be registered (another app owns
+    /// it), the previous shortcut is restored and kept, and false is returned.
+    @discardableResult
+    func update(keyCode: UInt32, modifiers: UInt32) -> Bool {
+        let oldKeyCode = self.keyCode
+        let oldModifiers = self.modifiers
         self.keyCode = keyCode
         self.modifiers = modifiers
+        guard register() else {
+            self.keyCode = oldKeyCode
+            self.modifiers = oldModifiers
+            register()
+            return false
+        }
         let defaults = UserDefaults.standard
         defaults.set(Int(keyCode), forKey: "hotkeyKeyCode")
         defaults.set(Int(modifiers), forKey: "hotkeyModifiers")
-        register()
+        return true
     }
 
     /// Carbon consumes a registered hotkey before it can reach the shortcut
