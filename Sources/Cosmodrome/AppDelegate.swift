@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         // Demo/testing modes mutate the layout; keep them off the user's disk.
-        if CommandLine.arguments.contains("--demo") || CommandLine.arguments.contains("--ephemeral") {
+        if ["--demo", "--ephemeral", "--arranged"].contains(where: CommandLine.arguments.contains) {
             state.persistenceEnabled = false
         }
         state.bootstrap()
