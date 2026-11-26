@@ -5,6 +5,43 @@ All notable changes to Cosmodrome are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Fixes on `main` since 0.2.0; not in a release build yet.
+
+### Fixed
+- **Layout safety** — a `layout.json` that can't be read or decoded (after a
+  version rollback or a hand-editing slip) is moved aside to
+  `layout.json.corrupt-<UTC timestamp>` instead of being overwritten with a
+  fresh A–Z layout. If it can't be moved, saving is disabled for the session
+  so the original is never lost.
+- **Folders** — dragging an app out of a two-app folder and dropping it back
+  on that folder no longer drops the app from the layout; it snaps back.
+- **Folder rename** — a rename in progress is kept when the grid closes
+  instead of being discarded on the next open.
+- **Search** — Turkish dotless `ı` folds to `i`, so `hizli` finds names
+  spelled with `ı` and a query typed with `ı` matches names spelled with `I`.
+- **Shortcut recorder** — only F1–F19 are accepted without a modifier
+  (F17–F19 were rejected; Help, Home, End, Page Up/Down and Forward Delete
+  were wrongly accepted as bare global shortcuts).
+- **Global shortcut** — if a new shortcut can't be registered, the previous
+  one stays active and saved; Settings beeps and says so instead of leaving
+  the app with no shortcut.
+- **`--arranged`** launch flag no longer overwrites the saved layout; like
+  `--demo` and `--ephemeral` it runs without persistence.
+
+### Removed
+- Debug logging that wrote each dragged app's path (including the home
+  folder) to the unified log in release builds.
+- The app-grid screenshots and demo GIF from the README.
+
+### Docs
+- Added this changelog, `CONTRIBUTING.md` (build/test workflow and
+  architecture notes), `.editorconfig`, and README badges with a
+  "What's new" pointer.
+- README install steps updated for macOS 15+ (Sequoia, Tahoe 26, 27), where
+  right-click → Open no longer bypasses Gatekeeper for the unsigned build.
+
 ## [0.2.0] — 2026-07-13
 
 The grid became editable.
@@ -63,5 +100,6 @@ The first release: the full-screen app grid macOS lost.
   wallpaper blur, deterministic scanner dedupe, and more).
 - 26 unit tests.
 
+[Unreleased]: https://github.com/cleoanka/cosmodrome/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/cleoanka/cosmodrome/releases/tag/v0.2.0
 [0.1.0]: https://github.com/cleoanka/cosmodrome/releases/tag/v0.1.0

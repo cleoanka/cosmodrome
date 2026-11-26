@@ -47,17 +47,41 @@ brings it back, rebuilt natively in Swift.
 
 ## Install
 
-Grab `Cosmodrome-x.y.z.zip` from [Releases](https://github.com/cleoanka/cosmodrome/releases),
-unzip, drop `Cosmodrome.app` into `/Applications`.
+Requires macOS 14+. The release is a universal build (Apple Silicon + Intel).
 
-The app is ad-hoc signed (no Apple Developer certificate), so on first run either
-right-click → **Open**, or:
+Cosmodrome is **ad-hoc signed and not notarized** (no Apple Developer ID), so
+Gatekeeper blocks it when it arrives through a browser download. Since macOS 15
+Sequoia — and on Tahoe (26) and 27 — right-click → **Open** no longer gets
+past that block. Pick one of these instead:
+
+**A. Terminal download (no quarantine, nothing to unblock).** Command-line
+downloads don't get the quarantine flag, so the app just opens:
+
+```bash
+curl -fLO https://github.com/cleoanka/cosmodrome/releases/download/v0.2.0/Cosmodrome-0.2.0.zip
+ditto -x -k Cosmodrome-0.2.0.zip /Applications
+open /Applications/Cosmodrome.app
+```
+
+(Replace `0.2.0` with the [latest release](https://github.com/cleoanka/cosmodrome/releases/latest).)
+
+**B. Browser download, then clear the quarantine flag.** Download
+`Cosmodrome-x.y.z.zip` from [Releases](https://github.com/cleoanka/cosmodrome/releases),
+double-click to unzip, drag `Cosmodrome.app` into `/Applications`, then run:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Cosmodrome.app
 ```
 
-Or build it yourself — see below. Requires macOS 14+.
+**C. Browser download, no Terminal.** Open the app once; macOS refuses and
+shows a warning — click **Done**. Then go to **System Settings →
+Privacy & Security**, scroll to **Security**, click **Open Anyway** next to
+the Cosmodrome message (it is shown for about an hour after the blocked
+attempt), authenticate, and confirm **Open**. Apple's guide:
+[Safely open apps on your Mac](https://support.apple.com/102445).
+
+Only do this if you trust the download — or build it yourself (see below);
+a local build is never quarantined.
 
 > Tip: keep `Cosmodrome.app` in your Dock. Clicking it opens the grid, exactly
 > like the old Launchpad tile. Want it on F4 like the old days? Remap F4 to
